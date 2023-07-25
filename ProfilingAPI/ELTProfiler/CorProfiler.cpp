@@ -1,82 +1,13 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include "Profiler.hpp"
+
 #include "CorProfiler.h"
 #include "corhlpr.h"
 #include "CComPtr.h"
 #include "profiler_pal.h"
 #include <string>
-
-PROFILER_STUB EnterStub(FunctionIDOrClientID functionId, COR_PRF_ELT_INFO eltInfo)
-{
-    printf("\r\nEnter %" UINT_PTR_FORMAT "", (UINT64)functionId.functionID);
-}
-
-PROFILER_STUB LeaveStub(FunctionID functionId, COR_PRF_ELT_INFO eltInfo)
-{
-    printf("\r\nLeave %" UINT_PTR_FORMAT "", (UINT64)functionId);
-}
-
-PROFILER_STUB TailcallStub(FunctionID functionId, COR_PRF_ELT_INFO eltInfo)
-{
-    printf("\r\nTailcall %" UINT_PTR_FORMAT "", (UINT64)functionId);
-}
-
-#ifdef _X86_
-#ifdef _WIN32
-void __declspec(naked) EnterNaked(FunctionIDOrClientID functionIDOrClientID, COR_PRF_ELT_INFO eltInfo)
-{
-    __asm
-    {
-        PUSH EAX
-        PUSH ECX
-        PUSH EDX
-        PUSH [ESP + 16]
-        CALL EnterStub
-        POP EDX
-        POP ECX
-        POP EAX
-        RET 8
-    }
-}
-
-void __declspec(naked) LeaveNaked(FunctionIDOrClientID functionIDOrClientID, COR_PRF_ELT_INFO eltInfo)
-{
-    __asm
-    {
-        PUSH EAX
-        PUSH ECX
-        PUSH EDX
-        PUSH [ESP + 16]
-        CALL LeaveStub
-        POP EDX
-        POP ECX
-        POP EAX
-        RET 8
-    }
-}
-
-void __declspec(naked) TailcallNaked(FunctionIDOrClientID functionIDOrClientID, COR_PRF_ELT_INFO eltInfo)
-{
-    __asm
-    {
-        PUSH EAX
-        PUSH ECX
-        PUSH EDX
-        PUSH[ESP + 16]
-        CALL TailcallStub
-        POP EDX
-        POP ECX
-        POP EAX
-        RET 8
-    }
-}
-#endif
-#elif defined(_AMD64_)
-EXTERN_C void EnterNaked(FunctionIDOrClientID functionIDOrClientID, COR_PRF_ELT_INFO eltInfo);
-EXTERN_C void LeaveNaked(FunctionIDOrClientID functionIDOrClientID, COR_PRF_ELT_INFO eltInfo);
-EXTERN_C void TailcallNaked(FunctionIDOrClientID functionIDOrClientID, COR_PRF_ELT_INFO eltInfo);
-#endif
 
 CorProfiler::CorProfiler() : refCount(0), corProfilerInfo(nullptr)
 {
@@ -100,7 +31,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown *pICorProfilerInfoUnk
         return E_FAIL;
     }
 
-    DWORD eventMask = COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_ENABLE_FUNCTION_ARGS | COR_PRF_ENABLE_FUNCTION_RETVAL | COR_PRF_ENABLE_FRAME_INFO;
+    DWORD eventMask = COR_PRF_MONITOR_JIT_COMPILATION |
+        COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
+        COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+        COR_PRF_MONITOR_ASSEMBLY_LOADS |
+        COR_PRF_DISABLE_ALL_NGEN_IMAGES;
 
     auto hr = this->corProfilerInfo->SetEventMask(eventMask);
     if (hr != S_OK)
@@ -108,12 +43,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown *pICorProfilerInfoUnk
         printf("ERROR: Profiler SetEventMask failed (HRESULT: %d)", hr);
     }
 
-    hr = this->corProfilerInfo->SetEnterLeaveFunctionHooks3WithInfo(EnterNaked, LeaveNaked, TailcallNaked);
-
-    if (hr != S_OK)
-    {
-        printf("ERROR: Profiler SetEnterLeaveFunctionHooks3WithInfo failed (HRESULT: %d)", hr);
-    }
+    Profiler::getInstance().Initialize(pICorProfilerInfoUnk);
 
     return S_OK;
 }
@@ -176,6 +106,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadStarted(ModuleID moduleId)
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus)
 {
+    Profiler::getInstance().ModuleLoadFinished(moduleId, hrStatus);
     return S_OK;
 }
 
@@ -221,6 +152,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID function
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
 {
+    Profiler::getInstance().JITCompilationStarted(functionId, fIsSafeToBlock);
     return S_OK;
 }
 

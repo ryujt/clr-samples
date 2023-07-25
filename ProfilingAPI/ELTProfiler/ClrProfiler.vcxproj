@@ -139,6 +139,9 @@
   <ItemGroup>
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="CorProfiler.h" />
+    <ClInclude Include="Profiler.hpp" />
+    <ClInclude Include="UdpSocket.hpp" />
+    <ClInclude Include="WhatapLog.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClassFactory.cpp" />
@@ -147,9 +150,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="ClrProfiler.def" />
-  </ItemGroup>
-  <ItemGroup>
-    <MASM Include="asmhelpers/amd64/windows/asmhelpers.asm" Condition="'$(Platform)' == 'x64'" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
