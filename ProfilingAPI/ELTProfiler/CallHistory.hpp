@@ -54,9 +54,17 @@ private:
         return result;
     }
 
-    void _addRecord(FunctionID functionId, int depth, double duration, CallType type)  // duration 인자 추가
-    {
-        _callHistory.push_back({ functionId, depth, duration, type });
+    void _addRecord(FunctionID functionId, int depth, double duration, CallType type) {
+        constexpr double MIN_TICKS_THRESHOLD = 100.0;
+
+        if (type == CallType::Leave && duration <= MIN_TICKS_THRESHOLD) {
+            if (!_callHistory.empty() && _callHistory.back().type == CallType::Enter && _callHistory.back().functionId == functionId) {
+                _callHistory.pop_back();
+            }
+        }
+        else {
+            _callHistory.push_back({ functionId, depth, duration, type });
+        }
     }
 
     void _printTree()
