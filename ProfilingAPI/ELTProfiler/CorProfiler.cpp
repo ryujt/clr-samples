@@ -1,6 +1,7 @@
 // Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
+#include "UdpSocket.hpp"
 #include "CorProfiler.h"
 #include "corhlpr.h"
 #include "CComPtr.h"
@@ -10,16 +11,19 @@
 PROFILER_STUB EnterStub(FunctionIDOrClientID functionId, COR_PRF_ELT_INFO eltInfo)
 {
     printf("\r\nEnter %" UINT_PTR_FORMAT "", (UINT64)functionId.functionID);
+    UdpSocket::getInstance().sendText("EnterStub");
 }
 
 PROFILER_STUB LeaveStub(FunctionID functionId, COR_PRF_ELT_INFO eltInfo)
 {
     printf("\r\nLeave %" UINT_PTR_FORMAT "", (UINT64)functionId);
+    UdpSocket::getInstance().sendText("LeaveStub");
 }
 
 PROFILER_STUB TailcallStub(FunctionID functionId, COR_PRF_ELT_INFO eltInfo)
 {
     printf("\r\nTailcall %" UINT_PTR_FORMAT "", (UINT64)functionId);
+    UdpSocket::getInstance().sendText("TailcallStub");
 }
 
 #ifdef _X86_
@@ -93,6 +97,9 @@ CorProfiler::~CorProfiler()
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown *pICorProfilerInfoUnk)
 {
+    UdpSocket::getInstance().setAddress("127.0.0.1", 2222);
+    UdpSocket::getInstance().sendText("Initialize");
+
     HRESULT queryInterfaceResult = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), reinterpret_cast<void **>(&this->corProfilerInfo));
 
     if (FAILED(queryInterfaceResult))
