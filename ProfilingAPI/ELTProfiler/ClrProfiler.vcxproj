@@ -47,7 +47,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-      <OutDir>..\..\Bin</OutDir>
+    <OutDir>..\..\Bin</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
@@ -55,7 +55,7 @@
     <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-      <OutDir>..\..\Bin</OutDir>
+    <OutDir>..\..\Bin</OutDir>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -139,8 +139,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CallHistory.hpp" />
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="CorProfiler.h" />
+    <ClInclude Include="MethodList.hpp" />
+    <ClInclude Include="PerformanceCounter.hpp" />
     <ClInclude Include="UdpSocket.hpp" />
   </ItemGroup>
   <ItemGroup>

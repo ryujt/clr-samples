@@ -1,29 +1,27 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "UdpSocket.hpp"
+#include "CallHistory.hpp"
 #include "CorProfiler.h"
 #include "corhlpr.h"
 #include "CComPtr.h"
 #include "profiler_pal.h"
 #include <string>
 
-PROFILER_STUB EnterStub(FunctionIDOrClientID functionId, COR_PRF_ELT_INFO eltInfo)
+PROFILER_STUB EnterStub(FunctionID functionId, COR_PRF_ELT_INFO eltInfo)
 {
-    printf("\r\nEnter %" UINT_PTR_FORMAT "", (UINT64)functionId.functionID);
-    UdpSocket::getInstance().sendText("EnterStub");
+    CallHistory::getInstance().Enter(functionId);
 }
 
 PROFILER_STUB LeaveStub(FunctionID functionId, COR_PRF_ELT_INFO eltInfo)
 {
-    printf("\r\nLeave %" UINT_PTR_FORMAT "", (UINT64)functionId);
-    UdpSocket::getInstance().sendText("LeaveStub");
+    CallHistory::getInstance().Leave(functionId);
 }
 
 PROFILER_STUB TailcallStub(FunctionID functionId, COR_PRF_ELT_INFO eltInfo)
 {
-    printf("\r\nTailcall %" UINT_PTR_FORMAT "", (UINT64)functionId);
-    UdpSocket::getInstance().sendText("TailcallStub");
+    CallHistory::getInstance().Tailcall(functionId);
 }
 
 #ifdef _X86_
@@ -121,6 +119,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown *pICorProfilerInfoUnk
     {
         printf("ERROR: Profiler SetEnterLeaveFunctionHooks3WithInfo failed (HRESULT: %d)", hr);
     }
+
+    MethodList::getIncetance().Initialize(this->corProfilerInfo);
 
     return S_OK;
 }
