@@ -144,6 +144,7 @@
     <ClInclude Include="CorProfiler.h" />
     <ClInclude Include="MethodList.hpp" />
     <ClInclude Include="PerformanceCounter.hpp" />
+    <ClInclude Include="Settings.hpp" />
     <ClInclude Include="UdpSocket.hpp" />
   </ItemGroup>
   <ItemGroup>

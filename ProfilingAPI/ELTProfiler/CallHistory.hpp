@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Settings.hpp"
 #include "MethodList.hpp"
 #include "PerformanceCounter.hpp"
 
@@ -15,12 +16,16 @@ public:
 
     void Enter(FunctionID functionId)
     {
+        if (!_checkNamespacePrefix(functionId)) return;
+
         PerformanceCounter::getIncetance().enter();
         _addRecord(functionId, _callDepth++, 0, CallType::Enter);
     }
 
     void Leave(FunctionID functionId)
     {
+        if (!_checkNamespacePrefix(functionId)) return;
+
         double duration = PerformanceCounter::getIncetance().leave();
         _addRecord(functionId, --_callDepth, duration, CallType::Leave);
         if (_callDepth == 0) _printTree();
@@ -28,6 +33,8 @@ public:
 
     void Tailcall(FunctionID functionId)
     {
+        if (!_checkNamespacePrefix(functionId)) return;
+
         _addRecord(functionId, _callDepth - 1, 0, CallType::Leave);
         _addRecord(functionId, _callDepth, 0, CallType::Tailcall);
         if (_callDepth == 0) _printTree();
@@ -48,6 +55,15 @@ private:
     vector<CallRecord> _callHistory;
     int _callDepth = 0;
 
+    bool _checkNamespacePrefix(FunctionID functionId) {
+        wstring name = MethodList::getIncetance().GetName(functionId);
+        wstring namespacePrefix = Settings::getInstance().getNamespacePrefix();
+
+        if (namespacePrefix.empty()) return true;
+
+        return (name.find(namespacePrefix) != wstring::npos);
+    }
+
     wstring _padding(int count) {
         wstring result = L"";
         for (int i = 0; i < count; i++) result += L"    ";
@@ -55,14 +71,11 @@ private:
     }
 
     void _addRecord(FunctionID functionId, int depth, double duration, CallType type) {
-        constexpr double MIN_TICKS_THRESHOLD = 100.0;
-
-        if (type == CallType::Leave && duration <= MIN_TICKS_THRESHOLD) {
+        if (type == CallType::Leave && duration <= Settings::getInstance().getProfileBaseTime()) {
             if (!_callHistory.empty() && _callHistory.back().type == CallType::Enter && _callHistory.back().functionId == functionId) {
                 _callHistory.pop_back();
             }
-        }
-        else {
+        } else {
             _callHistory.push_back({ functionId, depth, duration, type });
         }
     }

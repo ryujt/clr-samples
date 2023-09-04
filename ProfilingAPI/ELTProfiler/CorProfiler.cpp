@@ -99,22 +99,25 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown *pICorProfilerInfoUnk
     UdpSocket::getInstance().sendText("Initialize");
 
     HRESULT queryInterfaceResult = pICorProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), reinterpret_cast<void **>(&this->corProfilerInfo));
-
     if (FAILED(queryInterfaceResult))
     {
         return E_FAIL;
     }
 
-    DWORD eventMask = COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_ENABLE_FUNCTION_ARGS | COR_PRF_ENABLE_FUNCTION_RETVAL | COR_PRF_ENABLE_FRAME_INFO;
-
-    auto hr = this->corProfilerInfo->SetEventMask(eventMask);
+    DWORD event_mask = 
+        COR_PRF_MONITOR_ENTERLEAVE | COR_PRF_ENABLE_FUNCTION_ARGS | COR_PRF_ENABLE_FUNCTION_RETVAL | COR_PRF_ENABLE_FRAME_INFO |
+        COR_PRF_MONITOR_JIT_COMPILATION |
+        COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
+        COR_PRF_DISABLE_INLINING | COR_PRF_MONITOR_MODULE_LOADS |
+        COR_PRF_MONITOR_ASSEMBLY_LOADS |
+        COR_PRF_DISABLE_ALL_NGEN_IMAGES;
+    auto hr = this->corProfilerInfo->SetEventMask(event_mask);
     if (hr != S_OK)
     {
         printf("ERROR: Profiler SetEventMask failed (HRESULT: %d)", hr);
     }
 
     hr = this->corProfilerInfo->SetEnterLeaveFunctionHooks3WithInfo(EnterNaked, LeaveNaked, TailcallNaked);
-
     if (hr != S_OK)
     {
         printf("ERROR: Profiler SetEnterLeaveFunctionHooks3WithInfo failed (HRESULT: %d)", hr);
@@ -133,6 +136,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
         this->corProfilerInfo = nullptr;
     }
 
+    return S_OK;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
+{
     return S_OK;
 }
 
@@ -222,11 +230,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ClassUnloadFinished(ClassID classId, HRES
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID functionId)
-{
-    return S_OK;
-}
-
-HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
 {
     return S_OK;
 }
