@@ -25,8 +25,18 @@ public:
         LARGE_INTEGER exCounter = _stack.top();
         _stack.pop();
 
-//        return (counter.QuadPart - exCounter.QuadPart) / _frequency.QuadPart;
         return (counter.QuadPart - exCounter.QuadPart);
+    }
+
+    double leaveInMilliseconds() {
+        LARGE_INTEGER counter;
+        QueryPerformanceCounter(&counter);
+
+        LARGE_INTEGER exCounter = _stack.top();
+        _stack.pop();
+
+        double elapsedTimeInSeconds = static_cast<double>(counter.QuadPart - exCounter.QuadPart) / _frequency.QuadPart;
+        return elapsedTimeInSeconds * 1000.0;
     }
 
 private:
