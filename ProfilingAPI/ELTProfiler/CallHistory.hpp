@@ -87,17 +87,26 @@ private:
             wstring prefix = _padding(record.depth);
             wstring duration = to_wstring(static_cast<int>(record.duration)) + L" ticks";
 
+            wstring message;
+
             switch (record.type) {
             case CallType::Enter:
-                UdpSocket::getInstance().sendText(prefix + L"Enter: " + name);
+                message = prefix + L"Enter: " + name;
+                UdpSocket::getInstance().sendText(message);
+                wprintf(L"%ls\n", message.c_str());
                 break;
             case CallType::Leave:
-                UdpSocket::getInstance().sendText(prefix + L"Leave: " + name + L", Duration: " + duration);
+                message = prefix + L"Leave: " + name + L", Duration: " + duration;
+                UdpSocket::getInstance().sendText(message);
+                wprintf(L"%ls\n", message.c_str());
                 break;
             case CallType::Tailcall:
-                UdpSocket::getInstance().sendText(prefix + L"Tailcall: " + name);
+                message = prefix + L"Tailcall: " + name;
+                UdpSocket::getInstance().sendText(message);
+                wprintf(L"%ls\n", message.c_str());
                 break;
             }
         }
     }
+
 };
