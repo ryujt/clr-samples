@@ -8,20 +8,9 @@
 #include "profiler_pal.h"
 #include <string>
 
-static void STDMETHODCALLTYPE Enter(FunctionID functionId)
-{
-    printf("\r\nEnter %" UINT_PTR_FORMAT "", (UINT64)functionId);
-}
-
-static void STDMETHODCALLTYPE Leave(FunctionID functionId)
-{
-    printf("\r\nLeave %" UINT_PTR_FORMAT "", (UINT64)functionId);
-}
-
-COR_SIGNATURE enterLeaveMethodSignature             [] = { IMAGE_CEE_CS_CALLCONV_STDCALL, 0x01, ELEMENT_TYPE_VOID, ELEMENT_TYPE_I };
-
-void(STDMETHODCALLTYPE *EnterMethodAddress)(FunctionID) = &Enter;
-void(STDMETHODCALLTYPE *LeaveMethodAddress)(FunctionID) = &Leave;
+#include "com_ptr.h"
+#include "il_rewriter.h"
+#include "il_rewriter_wrapper.h"
 
 CorProfiler::CorProfiler() : refCount(0), corProfilerInfo(nullptr)
 {
@@ -157,23 +146,32 @@ HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID function
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
 {
-    HRESULT hr;
-    mdToken token;
-    ClassID classId;
-    ModuleID moduleId;
+    ModuleID moduleID;
+    mdToken function_token = mdTokenNil;
+    HRESULT hr = this->corProfilerInfo->GetFunctionInfo(functionId, nullptr, &moduleID, &function_token);
+    IfFailRet(hr);
 
-    IfFailRet(this->corProfilerInfo->GetFunctionInfo(functionId, &classId, &moduleId, &token));
+    // TODO:
+    //ComPtr<IMetaDataImport2> metadata_import = ...;
 
-    CComPtr<IMetaDataImport> metadataImport;
-    IfFailRet(this->corProfilerInfo->GetModuleMetaData(moduleId, ofRead | ofWrite, IID_IMetaDataImport, reinterpret_cast<IUnknown **>(&metadataImport)));
+    ILRewriter rewriter(this->corProfilerInfo, nullptr, moduleID, function_token);
+    hr = rewriter.Import();
+    IfFailRet(hr);
 
-    CComPtr<IMetaDataEmit> metadataEmit;
-    IfFailRet(metadataImport->QueryInterface(IID_IMetaDataEmit, reinterpret_cast<void **>(&metadataEmit)));
+    ILRewriterWrapper rewriter_wrapper(&rewriter);
 
-    mdSignature enterLeaveMethodSignatureToken;
-    metadataEmit->GetTokenFromSig(enterLeaveMethodSignature, sizeof(enterLeaveMethodSignature), &enterLeaveMethodSignatureToken);
 
-    return RewriteIL(this->corProfilerInfo, nullptr, moduleId, token, functionId, reinterpret_cast<ULONGLONG>(EnterMethodAddress), reinterpret_cast<ULONGLONG>(LeaveMethodAddress), enterLeaveMethodSignatureToken);
+    for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+    {
+        if (pInstr->m_opcode >= CEE_CALL && pInstr->m_opcode <= CEE_CALLVIRT) {
+            //auto opcodeData = GetOpcodeString(pInstr->m_opcode);
+            //auto target = GetFunctionInfo(metadata_import, pInstr->m_Arg32);
+            //opcodeData += L" - " + target.type.name + L"." + target.name;
+        }
+        // TODO:
+    }
+
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationFinished(FunctionID functionId, HRESULT hrStatus, BOOL fIsSafeToBlock)
