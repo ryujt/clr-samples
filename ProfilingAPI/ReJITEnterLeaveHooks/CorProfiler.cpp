@@ -1,4 +1,4 @@
-// Copyright (c) .NET Foundation and contributors. All rights reserved.
+﻿// Copyright (c) .NET Foundation and contributors. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 #include "CorProfiler.h"
@@ -7,10 +7,17 @@
 #include "ILRewriter.h"
 #include "profiler_pal.h"
 #include <string>
+#include <iostream>
 
+#include <CorHdr.h>
+#include <CorProf.h>
+
+#include "opcodes.h"
 #include "com_ptr.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
+
+using namespace std;
 
 CorProfiler::CorProfiler() : refCount(0), corProfilerInfo(nullptr)
 {
@@ -144,6 +151,62 @@ HRESULT STDMETHODCALLTYPE CorProfiler::FunctionUnloadStarted(FunctionID function
     return S_OK;
 }
 
+static wstring GetOpcodeString(int opcode)
+{
+    auto it = opcodeNames.find(static_cast<USHORT>(opcode));
+    if (it != opcodeNames.end())
+    {
+        wstring wideString(it->second.begin(), it->second.end());
+        return wideString;
+    }
+    return L"";
+}
+
+std::wstring GetFunctionInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdToken& token) {
+    mdToken parent_token = mdTokenNil;
+    WCHAR function_name[2048] = L"\0";
+    ULONG function_name_len = 0;
+    PCCOR_SIGNATURE raw_signature;
+    ULONG raw_signature_len;
+
+    HRESULT hr;
+    switch (TypeFromToken(token)) {
+    case mdtMemberRef:
+        hr = metadata_import->GetMemberRefProps(token, &parent_token, function_name, sizeof(function_name) / sizeof(WCHAR), &function_name_len, &raw_signature, &raw_signature_len);
+        break;
+    case mdtMethodDef:
+        hr = metadata_import->GetMethodProps(token, &parent_token, function_name, sizeof(function_name) / sizeof(WCHAR), &function_name_len, nullptr, &raw_signature, &raw_signature_len, nullptr, nullptr);
+        break;
+    case mdtMethodSpec:
+        hr = metadata_import->GetMethodSpecProps(token, &parent_token, &raw_signature, &raw_signature_len);
+        if (SUCCEEDED(hr)) {
+            std::wstring parent_info = GetFunctionInfo(metadata_import, parent_token);
+            if (!parent_info.empty()) {
+                return parent_info + L"<generic>";
+            }
+        }
+        break;
+    default:
+        break;
+    }
+
+    WCHAR type_name[2048] = L"\0";
+    ULONG type_name_len;
+    hr = metadata_import->GetTypeDefProps(parent_token, type_name, sizeof(type_name) / sizeof(WCHAR), &type_name_len, nullptr, nullptr);
+
+    if (wcscmp(type_name, L"\0") == 0 && wcscmp(function_name, L"\0") == 0) {
+        return L"\0";
+    }
+    if (wcscmp(type_name, L"\0") == 0) {
+        return function_name;
+    }
+
+    std::wstring result = type_name;
+    result += L".";
+    result += function_name;
+    return result;
+}
+
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID functionId, BOOL fIsSafeToBlock)
 {
     ModuleID moduleID;
@@ -151,8 +214,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     HRESULT hr = this->corProfilerInfo->GetFunctionInfo(functionId, nullptr, &moduleID, &function_token);
     IfFailRet(hr);
 
-    // TODO:
-    //ComPtr<IMetaDataImport2> metadata_import = ...;
+    ComPtr<IUnknown> metadata_interfaces;
+    hr = this->corProfilerInfo->GetModuleMetaData(moduleID, ofRead | ofWrite, IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+    IfFailRet(hr);
+    ComPtr<IMetaDataImport2> metadata_import = metadata_interfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
 
     ILRewriter rewriter(this->corProfilerInfo, nullptr, moduleID, function_token);
     hr = rewriter.Import();
@@ -160,15 +225,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
 
     ILRewriterWrapper rewriter_wrapper(&rewriter);
 
-
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
     {
+        auto opcodeData = GetOpcodeString(pInstr->m_opcode);
         if (pInstr->m_opcode >= CEE_CALL && pInstr->m_opcode <= CEE_CALLVIRT) {
-            //auto opcodeData = GetOpcodeString(pInstr->m_opcode);
-            //auto target = GetFunctionInfo(metadata_import, pInstr->m_Arg32);
-            //opcodeData += L" - " + target.type.name + L"." + target.name;
-        }
-        // TODO:
+            auto target = GetFunctionInfo(metadata_import, pInstr->m_Arg32);
+            opcodeData += L" - " + target;
+        }        
+        wcout << opcodeData << endl;
     }
 
     return S_OK;

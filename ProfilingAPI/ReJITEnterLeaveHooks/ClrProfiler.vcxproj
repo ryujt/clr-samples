@@ -58,22 +58,22 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src;D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-lib\spdlog\include</IncludePath>
     <OutDir>../../Bin</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src;D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-lib\spdlog\include</IncludePath>
     <OutDir>../../Bin</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src;D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-lib\spdlog\include</IncludePath>
     <OutDir>../../Bin</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(CORECLR_PATH)\src\pal\prebuilt\inc;$(CORECLR_PATH)\src\inc;$(CORECLR_PATH)\bin\Product\$(BuildOS).$(BuildArch).$(BuildType)\inc;$(NETFXSDKDir)Include\um;$(WindowsSDK_IncludePath);D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-src;D:\Projects\OpenSource\dd-trace-dotnet\shared\src\native-lib\spdlog\include</IncludePath>
     <OutDir>../../Bin</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -140,6 +140,7 @@
     <ClInclude Include="ClassFactory.h" />
     <ClInclude Include="CorProfiler.h" />
     <ClInclude Include="ILRewriter.h" />
+    <ClInclude Include="opcodes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ClassFactory.cpp" />
